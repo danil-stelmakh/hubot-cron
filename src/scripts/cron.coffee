@@ -13,8 +13,13 @@ cronJob = require('cron').CronJob
 
 JOBS = {}
 
+getNextJobId = (robot) ->
+  id = 1 + robot.brain.get('jobIdSequence') * 1 or 1
+  robot.brain.set('jobIdSequence', id)
+  id
+
 createNewJob = (robot, pattern, user, message) ->
-  id = Math.floor(Math.random() * 1000000)
+  id = getNextJobId(robot)
   job = registerNewJob robot, id, pattern, user, message
   robot.brain.data.cronjob[id] = job.serialize()
   id
@@ -25,10 +30,13 @@ registerNewJob = (robot, id, pattern, user, message) ->
   JOBS[id]
 
 module.exports = (robot) ->
+  init = false
   robot.brain.on 'loaded', =>
-    robot.brain.data.cronjob or= {}
-    for own id, job of robot.brain.data.cronjob
-      registerNewJob robot, id, job[0], job[1], job[2]
+    unless init
+      init = true
+      robot.brain.data.cronjob or= {}
+      for own id, job of robot.brain.data.cronjob
+        registerNewJob robot, id, job[0], job[1], job[2]
 
   robot.respond /(?:new|add) job "(.*?)" (.*)$/i, (msg) ->
     try
