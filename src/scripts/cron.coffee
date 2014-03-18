@@ -39,6 +39,8 @@ module.exports = (robot) ->
         registerNewJob robot, id, job[0], job[1], job[2]
 
   robot.respond /(?:new|add) job "(.*?)" (.*)$/i, (msg) ->
+    console.log msg.envelope.user
+    return msg.reply "No permissions" unless robot.auth.hasRole(msg.envelope.user,'cron')
     try
       id = createNewJob robot, msg.match[1], msg.message.user, msg.match[2]
       msg.send "Job #{id} created"
@@ -50,6 +52,7 @@ module.exports = (robot) ->
       msg.send "#{id}: #{job[0]} @#{job[1].room} \"#{job[2]}\""
 
   robot.respond /(?:rm|remove|del|delete) job (\d+)/i, (msg) ->
+    return msg.reply "No permissions" unless robot.auth.hasRole(msg.envelope.user,'cron')
     id = msg.match[1]
     if JOBS[id]
       JOBS[id].stop()
